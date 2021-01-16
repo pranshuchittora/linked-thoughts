@@ -26,16 +26,10 @@ export class WikiDrawerContent extends EveesBaseElement<Wiki> {
   logger = new Logger('WIKI-DRAWER-CONTENT');
 
   @internalProperty()
-  pagesList: PageData[] | undefined = undefined;
-
-  @internalProperty()
   selectedPageIx: number | undefined = undefined;
 
   @internalProperty()
   creatingNewPage = false;
-
-  @internalProperty()
-  editableActual = false;
 
   @internalProperty()
   showNewPageDialog = false;
@@ -47,9 +41,6 @@ export class WikiDrawerContent extends EveesBaseElement<Wiki> {
       if (e.detail.uref === this.uref) {
         this.logger.log('ContentUpdatedEvent()', this.uref);
         this.load();
-      }
-      if (this.pagesList && this.pagesList.findIndex((page) => page.id === e.detail.uref) !== -1) {
-        this.loadPagesData();
       }
     }) as EventListener);
   }
@@ -63,7 +54,6 @@ export class WikiDrawerContent extends EveesBaseElement<Wiki> {
 
   async reset() {
     // await this.client.resetStore();
-    this.pagesList = undefined;
     this.selectedPageIx = undefined;
     this.data = undefined;
     this.logger.log('reset()', this.uref);
@@ -75,6 +65,11 @@ export class WikiDrawerContent extends EveesBaseElement<Wiki> {
   /** overwrite */
   async load() {
     await super.load();
+    this.data = {
+      text: '',
+      type: 'Title',
+      links: ['zb1PrivateFolderId', 'zb2BlogFolderId'],
+    };
     await this.loadPagesData();
   }
 
@@ -251,12 +246,16 @@ export class WikiDrawerContent extends EveesBaseElement<Wiki> {
   }
 
   goBack() {
-    this.dispatchEvent(new CustomEvent('back', { bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent('back', { bubbles: true, composed: true })
+    );
   }
 
   renderPageList(showOptions = true) {
     if (this.pagesList === undefined)
-      return html` <uprtcl-loading class="empty-pages-loader"></uprtcl-loading> `;
+      return html`
+        <uprtcl-loading class="empty-pages-loader"></uprtcl-loading>
+      `;
 
     return html`
       ${this.editableActual
@@ -277,7 +276,9 @@ export class WikiDrawerContent extends EveesBaseElement<Wiki> {
         : html``}
       ${this.showNewPageDialog
         ? html`<uprtcl-dialog id="updates-dialog">
-            <button @click=${() => (this.showNewPageDialog = false)}>Close</button>
+            <button @click=${() => (this.showNewPageDialog = false)}>
+              Close
+            </button>
             <button
               @click=${() => {
                 this.showNewPageDialog = false;
@@ -307,7 +308,6 @@ export class WikiDrawerContent extends EveesBaseElement<Wiki> {
 
   renderPageItem(page: PageData, ix: number, showOptions: boolean) {
     const menuConfig: MenuConfig = {
-
       'add-below': {
         disabled: false,
         text: 'create below',
@@ -341,7 +341,9 @@ export class WikiDrawerContent extends EveesBaseElement<Wiki> {
           @click=${() => this.selectPage(ix)}
         >
           <div class="text-container">
-            ${text.length < MAX_LENGTH ? text : `${text.slice(0, MAX_LENGTH)}...`}
+            ${text.length < MAX_LENGTH
+              ? text
+              : `${text.slice(0, MAX_LENGTH)}...`}
           </div>
           ${this.editableActual && showOptions
             ? html`
@@ -357,15 +359,21 @@ export class WikiDrawerContent extends EveesBaseElement<Wiki> {
               `
             : ''}
         </div>
-        ${page.draggingOver ? html`<div class="title-dragging-over"></div>` : ''}
+        ${page.draggingOver
+          ? html`<div class="title-dragging-over"></div>`
+          : ''}
       </div>
     `;
   }
 
   renderHome() {
-    return html`<div class="home-title" style=${`color: ${this.color}`}>Now seeing</div>
+    return html`<div class="home-title" style=${`color: ${this.color}`}>
+        Now seeing
+      </div>
       <uprtcl-card>
-        <evees-perspective-icon perspective-id=${this.uref}></evees-perspective-icon>
+        <evees-perspective-icon
+          perspective-id=${this.uref}
+        ></evees-perspective-icon>
       </uprtcl-card>`;
   }
 
@@ -376,29 +384,37 @@ export class WikiDrawerContent extends EveesBaseElement<Wiki> {
 
     return html`
       <div class="app-content-with-nav">
-        <div class="app-navbar" @dragover=${this.dragOverEffect} @drop=${this.handlePageDrop}>
+        <div class="app-navbar" @dragover=${this.dragOverEffect} @drop=${
+      this.handlePageDrop
+    }>
           <evees-login-widget @showName=${true}></evees-login-widget>
           <!-- <h4>PRIVATE</h4> -->
+          <dashboard-section @page-selected=${() => this.selectPage()} uref=${
+      this.data.links[0]
+    }>
+          <dashboard-section uref=${this.data.links[1]}>
           ${this.renderPageList()}
           <!-- <h4>BLOG</h4> -->
         </div>
 
         <div class="app-content">
-          ${this.selectedPageIx !== undefined && this.data
-            ? html`
-                <div class="page-container">
-                  <documents-editor
-                    id="doc-editor"
-                    .client=${this.client}
-                    uref=${this.data.object.pages[this.selectedPageIx] as string}
-                    parent-id=${this.uref}
-                    color=${this.color}
-                    .eveesInfoConfig=${this.eveesInfoConfig}
-                  >
-                  </documents-editor>
-                </div>
-              `
-            : html` <div class="home-container">${this.renderHome()}</div> `}
+          ${
+            this.selectedPageIx !== undefined && this.data
+              ? html`
+                  <div class="page-container">
+                    <documents-editor
+                      id="doc-editor"
+                      .client=${this.client}
+                      uref=${this.currentPage}
+                      parent-id=${this.uref}
+                      color=${this.color}
+                      .eveesInfoConfig=${this.eveesInfoConfig}
+                    >
+                    </documents-editor>
+                  </div>
+                `
+              : html` <div class="home-container">${this.renderHome()}</div> `
+          }
         </div>
       </div>
     `;
