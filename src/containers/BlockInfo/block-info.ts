@@ -1,5 +1,5 @@
 import { html, css, property, internalProperty } from 'lit-element';
-import { styles } from '@uprtcl/common-ui';
+import { MenuOptions, styles, PopperPostion } from '@uprtcl/common-ui';
 import { Logger, ParentAndChild, Perspective, Secured } from '@uprtcl/evees';
 
 import { ConnectedElement } from '../../services/connected.element';
@@ -34,28 +34,45 @@ export class BlockInfoPopper extends ConnectedElement {
   async forkBlock() {
     await this.appManager.forkPage(this.uref, this.forksSection.id, true);
   }
+  async optionOnPage(e) {
+    switch (e.detail.key) {
+      case 'fork':
+        await this.forkBlock();
+        break;
+    }
+  }
 
   render() {
+    const menuConfig: MenuOptions = new Map();
+    menuConfig.set('fork', {
+      disabled: false,
+      text: 'Fork',
+      icon: 'fork',
+    });
     return html`
-      ${
-        this.forks && this.forks.length > 0
-          ? html`<uprtcl-popper skinny position="bottom-left">
-              <uprtcl-icon-button icon="fork" slot="icon" button skinny
-                >${this.forks.length}
-              </uprtcl-icon-button>
-              <uprtcl-card
-                >Fork ids:
-                ${this.forks.map(
-                  (e) => html`<li>${e.childId} on ${e.parentId}</li>`
-                )}
-              </uprtcl-card>
-            </uprtcl-popper>`
-          : ``
-      }
-      <uprtcl-popper skinny icon="menu" position="bottom-left">
-        <uprtcl-card><uprtcl-button @click=${() =>
-          this.forkBlock()}>Fork</uprtcl-button></uprtcl-button></uprtcl-card>
-      </uprtcl-popper>
+      ${this.forks && this.forks.length > 0
+        ? html`<uprtcl-popper skinny position="bottom-left">
+            <uprtcl-icon-button icon="fork" slot="icon" button skinny
+              >${this.forks.length}
+            </uprtcl-icon-button>
+            <uprtcl-card
+              >Fork ids:
+              ${this.forks.map(
+          (e) => html`<li>${e.childId} on ${e.parentId}</li>`
+        )}
+            </uprtcl-card>
+          </uprtcl-popper>`
+        : ``}
+
+      <uprtcl-options-menu
+        class="options-menu"
+        @option-click=${this.optionOnPage}
+        .config=${menuConfig}
+        skinny
+        secondary
+        position=${PopperPostion.bottomLeft}
+      >
+      </uprtcl-options-menu>
     `;
   }
   static get styles() {
